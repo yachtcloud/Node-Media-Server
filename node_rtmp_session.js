@@ -250,6 +250,17 @@ class NodeRtmpSession extends EventEmitter {
         message.timestampDelta = extTimestamp.readUInt32BE();
       }
 
+      /**
+       * Injecting offsetTsApply 
+       */
+      if (this.offsetTsApply && this.offsetTsApply > message.timestamp) {
+          message.timestamp = +message.timestamp + +this.offsetTsApply;
+      }
+      this.lastTs = message.timestamp;
+      /**
+       * END
+       */
+
       let chunkBodySize = message.messageLength;
       chunkBodySize -= message.receivedLength;
       chunkBodySize = Math.min(chunkBodySize, this.inChunkSize);
