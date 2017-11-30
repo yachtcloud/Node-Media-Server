@@ -253,10 +253,15 @@ class NodeRtmpSession extends EventEmitter {
       /**
        * Injecting offsetTsApply 
        */
+      if (!this.lastTs) 
+        this.lastTs = message.timestamp;
+      
       if (this.offsetTsApply && this.offsetTsApply > message.timestamp) {
-          message.timestamp = +message.timestamp + +this.offsetTsApply;
+        message.timestamp = +message.timestamp + +this.offsetTsApply;
       }
-      this.lastTs = message.timestamp;
+
+      if (message.timestamp >= this.lastTs)
+        this.lastTs = message.timestamp;
       /**
        * END
        */
