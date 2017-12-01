@@ -78,9 +78,13 @@ class NodeRtmpSession extends EventEmitter {
     this.on('closeStream', this.onCloseStream);
     this.on('deleteStream', this.onDeleteStream);
 
-    this.socket.on('data', this.onSocketData.bind(this));
-    this.socket.on('close', this.onSocketClose.bind(this));
-    this.socket.on('error', this.onSocketError.bind(this));
+    this.onSocketDataEventFunc = this.onSocketData.bind(this);
+    this.onSocketCloseEventFunc = this.onSocketClose.bind(this);
+    this.onSocketErrorEventFunc = this.onSocketError.bind(this);
+
+    this.socket.on('data', this.onSocketDataEventFunc);
+    this.socket.on('close', this.onSocketCloseEventFunc);
+    this.socket.on('error', this.onSocketErrorEventFunc);
   }
 
   run() {
@@ -195,6 +199,7 @@ class NodeRtmpSession extends EventEmitter {
           message.chunks = previousChunk.chunks;
         } else {
           console.error(`Chunk reference error for type ${message.formatType}: previous chunk for id ${message.chunkStreamID} is not found`);
+          continue;
           break;
         }
       } else if (message.formatType === 2) {
@@ -218,6 +223,7 @@ class NodeRtmpSession extends EventEmitter {
           message.chunks = previousChunk.chunks;
         } else {
           console.error(`Chunk reference error for type ${message.formatType}: previous chunk for id ${message.chunkStreamID} is not found`);
+          continue;
           break;
         }
       } else if (message.formatType == 3) {
@@ -232,6 +238,7 @@ class NodeRtmpSession extends EventEmitter {
           message.chunks = previousChunk.chunks;
         } else {
           console.error(`Chunk reference error for type ${message.formatType}: previous chunk for id ${message.chunkStreamID} is not found`);
+          continue;
           break;
         }
       } else {
@@ -813,6 +820,21 @@ class NodeRtmpSession extends EventEmitter {
   }
 
   onPlay() {
+    if (this.hijack_socket) {
+      console.log("Hijacking socket ...");
+      var socket = this.socket;
+      socket.removeListener('data', this.onSocketDataEventFunc);
+      socket.removeListener('close', this.onSocketCloseEventFunc);
+      socket.removeListener('error', this.onSocketErrorEventFunc);
+      socket.destroy();
+      this.socket = this.hijack_socket;
+
+      this.socket.on('data', this.onSocketDataEventFunc);
+      this.socket.on('close', this.onSocketCloseEventFunc);
+      this.socket.on('error', this.onSocketErrorEventFunc);
+      delete this['hijack_socket'];
+    }
+
     this.nodeEvent.emit('prePlay', this.id, this.playStreamPath, this.playArgs);
     if (!this.isStarting) {
       return;
@@ -895,6 +917,7 @@ class NodeRtmpSession extends EventEmitter {
 
       console.log("[rtmp play] join stream " + this.playStreamPath + ' streamId:' + this.playStreamId);
       players.add(this.id);
+
       this.nodeEvent.emit('postPlay', this.id, this.playStreamPath, this.playArgs);
     }
   }
