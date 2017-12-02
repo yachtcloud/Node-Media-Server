@@ -200,7 +200,6 @@ class NodeRtmpSession extends EventEmitter {
         } else {
           console.error(`Chunk reference error for type ${message.formatType}: previous chunk for id ${message.chunkStreamID} is not found`);
           continue;
-          break;
         }
       } else if (message.formatType === 2) {
         // Type 2 (3 bytes)
@@ -224,7 +223,6 @@ class NodeRtmpSession extends EventEmitter {
         } else {
           console.error(`Chunk reference error for type ${message.formatType}: previous chunk for id ${message.chunkStreamID} is not found`);
           continue;
-          break;
         }
       } else if (message.formatType == 3) {
         // Type 3 (0 byte)
@@ -239,7 +237,6 @@ class NodeRtmpSession extends EventEmitter {
         } else {
           console.error(`Chunk reference error for type ${message.formatType}: previous chunk for id ${message.chunkStreamID} is not found`);
           continue;
-          break;
         }
       } else {
         console.error("Unknown format type: " + message.formatType);
@@ -820,19 +817,19 @@ class NodeRtmpSession extends EventEmitter {
   }
 
   onPlay() {
-    if (this.hijack_socket) {
-      console.log("Hijacking socket ...");
+    if (this.hijacked_socket) {
+      console.log("Applying hijacked socket ...");
       var socket = this.socket;
       socket.removeListener('data', this.onSocketDataEventFunc);
       socket.removeListener('close', this.onSocketCloseEventFunc);
       socket.removeListener('error', this.onSocketErrorEventFunc);
       socket.destroy();
-      this.socket = this.hijack_socket;
-
+      this.socket = this.hijacked_socket;
       this.socket.on('data', this.onSocketDataEventFunc);
       this.socket.on('close', this.onSocketCloseEventFunc);
       this.socket.on('error', this.onSocketErrorEventFunc);
-      delete this['hijack_socket'];
+      this.socket.resume();
+      delete this['hijacked_socket'];
     }
 
     this.nodeEvent.emit('prePlay', this.id, this.playStreamPath, this.playArgs);
